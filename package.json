@@ -1,0 +1,59 @@
+{
+  "name": "sewcad",
+  "version": "0.0.1",
+  "description": "web cad for sew",
+  "main": "index.ts",
+  "scripts": {
+    "start": "webpack-dev-server"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/redexp/SewCAD.git"
+  },
+  "keywords": [
+    "sew",
+    "cad"
+  ],
+  "author": "Sergii Kliuchnyk <sergiikliuchnyk@gmail.com> (https://github.com/redexp)",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/redexp/SewCAD/issues"
+  },
+  "homepage": "https://github.com/redexp/SewCAD#readme",
+  "devDependencies": {
+    "@types/lodash": "^4.14.149",
+    "@types/react": "^16.9.19",
+    "@types/react-dom": "^16.9.5",
+    "@types/react-transition-group": "^4.2.3",
+    "@types/redux-actions": "^2.6.1",
+    "@types/styled-components": "^4.4.3",
+    "css-loader": "^3.4.2",
+    "file-loader": "^5.0.2",
+    "html-webpack-plugin": "^3.2.0",
+    "html-webpack-root-plugin": "^0.10.0",
+    "mini-css-extract-plugin": "^0.9.0",
+    "source-map-loader": "^0.2.4",
+    "ts-loader": "^6.2.1",
+    "tsconfig-paths-webpack-plugin": "^3.2.0",
+    "typescript": "^3.7.5",
+    "webpack": "^4.41.6",
+    "webpack-cli": "^3.3.11",
+    "webpack-dev-server": "^3.10.3"
+  },
+  "dependencies": {
+    "@flatten-js/core": "^1.1.0",
+    "classnames": "^2.2.6",
+    "i18next": "^19.1.0",
+    "konva": "^4.1.6",
+    "lodash": "^4.17.15",
+    "moment": "^2.24.0",
+    "react": "^16.12.0",
+    "react-dom": "^16.12.0",
+    "react-i18next": "^11.3.1",
+    "react-konva": "^16.12.0-0",
+    "reduce-reducers": "^1.0.4",
+    "redux": "^4.0.5",
+    "redux-actions": "^2.6.5",
+    "styled-components": "^5.0.1"
+  }
+}

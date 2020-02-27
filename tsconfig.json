@@ -1,0 +1,17 @@
+{
+  "compilerOptions": {
+    "outDir": "./dist/",
+    "noImplicitAny": false,
+    "module": "commonjs",
+    "target": "es6",
+    "esModuleInterop": true,
+    "jsx": "react",
+    "allowJs": true,
+    "sourceMap": true,
+    "experimentalDecorators": true,
+    "allowSyntheticDefaultImports": true,
+    "strictNullChecks": true,
+    "removeComments": true,
+    "baseUrl": "./src/"
+  }
+}
