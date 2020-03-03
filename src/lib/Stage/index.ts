@@ -1,17 +1,27 @@
-import F, {Point as FPoint, Vector, Line as FLine, Circle, Segment} from '@flatten-js/core';
+import F from '@flatten-js/core';
 import SimplePoint from 'types/Point';
 import isNum from 'lodash/isNumber';
+import Point, {PointParams} from './types/Point';
+import ID from './types/ID';
+import Shape from './types/Shape';
+import Rule from './rules/Rule';
+import AngleLineRule, {AngleLineRuleParams} from './rules/AngleLineRule';
+import DistanceRule, {DistanceRuleParams} from './rules/DistanceRule';
+import Draw from './draws/Draw';
+import LineDraw from './draws/Line';
+import ArcDraw from './draws/Arc';
 
 //@ts-ignore
 window.F = F;
 
-export default function path(start: Point|SimplePoint) {
-	return new Path(start);
+export default function stage(start: Point|SimplePoint) {
+	return new Stage(start);
 }
 
-class Path {
+class Stage {
     points: Point[] = [];
     draws: Draw[] = [];
+    rulesDraws: Draw[] = [];
     rules: Rule[] = [];
     pointer: Point;
     fixed = true;
@@ -46,6 +56,12 @@ class Path {
         return this.points.find(p => p.id === id);
     }
 
+    point(params: PointParams) {
+        var {id, x, y} = params;
+        this.addPoint(x, y, id);
+        return this;
+    }
+
     line(params: LineParams) {
         var {id, x, y, a, d} = params;
         var prev = this.pointer;
@@ -61,8 +77,8 @@ class Path {
             let p1 = this.getPrev(prev);
 
             this.angleRule({
-                line: [p1, prev],
-                point: p,
+                line1: [p1, prev],
+                line2: [prev, p],
                 angle: a,
             });
         }
@@ -99,8 +115,15 @@ class Path {
         return lines;
     }
 
-    angleRule(params: AngleRuleParams) {
-        this.rules.push(new AngleRule(params));
+    angleRule(params: AngleLineRuleParams) {
+        this.rules.push(new AngleLineRule(params as AngleLineRuleParams));
+
+        this.draws.push(new ArcDraw({
+            line1: params.line1,
+            line2: params.line2,
+            radius: 30,
+        }));
+
         this.fixed = false;
     }
 
@@ -200,85 +223,6 @@ class Path {
     }
 }
 
-class Point extends FPoint {
-    id: string|number|undefined;
-    valid: boolean = false;
-}
-
-interface Rule {
-    deps: Point[];
-    // shapeFor(p: Point, to?: Point): Shape;
-    isValid(): boolean;
-    getPointsShapes(): Array<{point: Point, shape: Shape}>
-}
-
-class AngleRule implements Rule {
-    deps: Point[];
-    line: Point[];
-    point: Point;
-    angle: number;
-    radian: number;
-
-    constructor(params: AngleRuleParams) {
-        Object.assign(this, params);
-
-        this.deps = [this.point];
-        this.radian = deg2rad(this.angle);
-    }
-
-    isValid(): boolean {
-        var v1 = new Vector(this.line[1], this.line[0]).normalize();
-        var v2 = new Vector(this.line[1], this.point).normalize();
-        var a = rad2deg(v1.angleTo(v2));
-
-        if (a > 180) {
-            a = 360 - a;
-        }
-
-        return a === Math.abs(this.angle);
-    }
-
-    getPointsShapes() {
-        let v = new Vector(this.line[1], this.line[0]);
-        v = v.normalize().multiply(Number.MAX_SAFE_INTEGER);
-        var line = new Segment(this.line[1], this.line[0].translate(v));
-        line = line.rotate(-this.radian, line.start);
-
-        return [
-            {
-                point: this.point,
-                shape: line,
-            }
-        ];
-    }
-}
-
-class DistanceRule implements Rule {
-    deps: Point[];
-    from: Point;
-    to: Point;
-    value: number;
-
-    constructor(params: DistanceRuleParams) {
-        Object.assign(this, params);
-
-        this.deps = [this.to];
-    }
-
-    isValid(): boolean {
-        return this.from.distanceTo(this.to)[0] === this.value;
-    }
-
-    getPointsShapes() {
-        return [
-            {
-                point: this.to,
-                shape: new Circle(this.from, this.value),
-            },
-        ];
-    }
-}
-
 interface LineParams {
     id?: ID,
     x?: number,
@@ -287,61 +231,9 @@ interface LineParams {
     d?: number,
 }
 
-type Shape = FLine|Circle|Segment;
-
-interface AngleRuleParams {
-    line: Point[],
-    point: Point,
-    angle: number,
-}
-
-interface DistanceRuleParams {
-    from: Point,
-    to: Point,
-    value: number,
-}
-
-type ID = string|number;
-
 interface PointPos {
     id?: ID,
     point?: Point,
     x: number,
     y: number,
-}
-
-class Draw {
-
-}
-
-class LineDraw extends Draw {
-    start: Point;
-    end: Point;
-
-    constructor(start: Point, end: Point) {
-        super();
-
-        this.start = start;
-        this.end = end;
-    }
-}
-
-function deg2rad(deg) {
-	return deg * Math.PI / 180;
-}
-
-function rad2deg(rad) {
-	var deg = rad * 180 / Math.PI;
-	return fix(deg);
-}
-
-function fix(n: number|FPoint|F.Vector) {
-    if (n instanceof FPoint) {
-        return new FPoint(fix(n.x), fix(n.y));
-    }
-    else if (n instanceof F.Vector) {
-        return new F.Vector(fix(n.x), fix(n.y));
-    }
-
-	return Number(n.toFixed(3));
 }
