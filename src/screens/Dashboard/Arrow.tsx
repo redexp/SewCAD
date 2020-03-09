@@ -1,9 +1,11 @@
 import React, {useCallback, useMemo, useState} from 'react';
-import K, {Path} from 'react-konva';
+import K from 'react-konva';
 import DragPoint from 'components/DragPoint';
+import {drawRule} from 'components/Rules';
 import Point from 'types/Point';
 import stage from 'lib/Stage';
 import _ from 'lib/y';
+import useRedraw from 'lib/useRedraw';
 
 interface ArrowProps {
     length: number,
@@ -11,52 +13,116 @@ interface ArrowProps {
 }
 
 export default function Arrow(props: ArrowProps) {
-    const {length} = props;
-    const [pos, setPos] = useState<Point>({x: length, y: length});
+    const [pos, setPos] = useState<Point>({x: 100, y: 100});
+    const [s, redraw] = useRedraw();
     const arrow = useMemo(() => {
         var st = (
-            stage({x: 100, y: 100})
+            stage({x: 50, y: 50})
                 .line({
-                    id: 'end',
-                    x: 150,
-                    y: 150,
+                    id: 'start',
+                    x: 100,
+                    y: 100,
                 })
                 .line({
+                    id: 'tl',
                     x: 100,
-                    y: 130,
+                    y: 200,
+                })
+                .line({
+                    id: 'tr',
+                    x: 200,
+                    y: 200,
+                })
+                .line({
+                    id: 'br',
+                    x: 200,
+                    y: 100,
+                })
+                .line({
+                    id: 'bl',
+                    x: 100,
+                    y: 100,
                 })
         );
 
-        var end = st.getById('end')!;
+        var start = st.getById('start')!;
+        var tl = st.getById('tl')!;
+        var tr = st.getById('tr')!;
+        var bl = st.getById('bl')!;
+        var br = st.getById('br')!;
 
         st.angleRule({
-            line1: [st.points[0], end],
-            line2: [end, st.pointer],
-            angle: 90,
+            line1: [st.points[0], start],
+            line2: [start, tl],
+            angle: 90 + 45,
         });
 
         st.distanceRule({
-            from: end,
-            to: st.pointer,
-            value: 40,
+            from: start,
+            to: tl,
+            value: 100,
+        });
+
+        // st.angleRule({
+        //     line1: [start, tl],
+        //     line2: [tl, tr],
+        //     angle: -90,
+        // });
+
+        st.distanceRule({
+            from: tl,
+            to: tr,
+            value: 100,
+        });
+
+        // st.angleRule({
+        //     line1: [tl, tr],
+        //     line2: [tr, br],
+        //     angle: -90,
+        // });
+
+        st.distanceRule({
+            from: tr,
+            to: br,
+            value: 100,
+        });
+
+        // st.angleRule({
+        //     line1: [tr, br],
+        //     line2: [br, bl],
+        //     angle: -90,
+        // });
+
+        st.distanceRule({
+            from: br,
+            to: bl,
+            value: 100,
         });
 
         return st;
     }, []);
     const lines = useMemo(() => {
         arrow.setPointPos({
-            id: 'end',
+            id: 'start',
             ...pos
         });
 
         return arrow.toLines();
-    }, [pos]);
+    }, [pos, s]);
+    const rules = useMemo(() => {
+        return arrow.rules.map((rule, i) => (
+            drawRule(rule, {
+                key: rule.type + i,
+                onChange: redraw,
+            })
+        ));
+    }, [lines]);
     const onDrag = useCallback((p: Point) => {
         setPos(p);
     }, []);
 
     return <>
-        <Path
+        <K.Path
             data={
                 lines.map(({start, end}) => (
                     `M ${start.x},${_(start.y)} L ${end.x},${_(end.y)}`
@@ -67,7 +133,7 @@ export default function Arrow(props: ArrowProps) {
             fill="none"
         />
 
-        {arrow.rules.map((r, i) => r.draw(i))}
+        {rules}
 
         <DragPoint
             x={pos.x}

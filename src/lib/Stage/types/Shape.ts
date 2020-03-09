@@ -1,5 +1,5 @@
-import {Circle, Line as FLine, Segment} from "@flatten-js/core";
+import F from "@flatten-js/core";
 
-type Shape = FLine|Circle|Segment;
+type Shape = F.Line|F.Segment|F.Circle|F.Arc;
 
 export default Shape;

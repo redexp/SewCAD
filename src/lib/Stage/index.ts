@@ -5,23 +5,18 @@ import Point, {PointParams} from './types/Point';
 import ID from './types/ID';
 import Shape from './types/Shape';
 import Rule from './rules/Rule';
-import AngleLineRule, {AngleLineRuleParams} from './rules/AngleLineRule';
+import AngleRule, {AngleLineRuleParams} from './rules/AngleRule';
 import DistanceRule, {DistanceRuleParams} from './rules/DistanceRule';
 import Draw from './draws/Draw';
 import LineDraw from './draws/Line';
-import ArcDraw from './draws/Arc';
-
-//@ts-ignore
-window.F = F;
 
 export default function stage(start: Point|SimplePoint) {
 	return new Stage(start);
 }
 
-class Stage {
+export class Stage {
     points: Point[] = [];
     draws: Draw[] = [];
-    rulesDraws: Draw[] = [];
     rules: Rule[] = [];
     pointer: Point;
     fixed = true;
@@ -80,6 +75,7 @@ class Stage {
                 line1: [p1, prev],
                 line2: [prev, p],
                 angle: a,
+                stage: this,
             });
         }
 
@@ -88,6 +84,7 @@ class Stage {
                 from: prev,
                 to: p,
                 value: d,
+                stage: this,
             });
         }
 
@@ -116,18 +113,20 @@ class Stage {
     }
 
     angleRule(params: AngleLineRuleParams) {
-        this.rules.push(new AngleLineRule(params as AngleLineRuleParams));
+        params.stage = this;
 
-        this.draws.push(new ArcDraw({
-            line1: params.line1,
-            line2: params.line2,
-            radius: 30,
-        }));
+        var rule = new AngleRule(params);
+
+        this.rules.push(rule);
 
         this.fixed = false;
+
+        return rule;
     }
 
     distanceRule(params: DistanceRuleParams) {
+        params.stage = this;
+
         this.rules.push(new DistanceRule(params));
         this.fixed = false;
     }

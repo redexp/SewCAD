@@ -19,7 +19,25 @@ export default function DragPoint(props: DragPointProps) {
     const ref = useRef<Konva.Circle|null>(null);
     const initPos = useRef<Point>({x, y});
     const curPos = useRef<Point>({x, y});
-    const startEventPos = useRef<Point>({x: 0, y: 0});
+    const startEventPos = useRef<Point|null>(null);
+
+    const onMouseOver = useCallback(() => {
+        ref.current!.to({
+            scaleX: 2,
+            scaleY: 2,
+            duration: 0.1,
+        });
+    }, []);
+
+    const onMouseOut = useCallback(() => {
+        if (startEventPos.current) return;
+
+        ref.current!.to({
+            scaleX: 1,
+            scaleY: 1,
+            duration: 0.1,
+        });
+    }, []);
 
     const onMouseDown = useCallback((e: KonvaMouseEvent) => {
         ref.current!.to({
@@ -36,8 +54,8 @@ export default function DragPoint(props: DragPointProps) {
 
     const onMouseMove = useCallback((e: KonvaDragEvent) => {
         var offset = {
-            x: e.evt.clientX - startEventPos.current.x,
-            y: startEventPos.current.y - e.evt.clientY,
+            x: e.evt.clientX - startEventPos.current!.x,
+            y: startEventPos.current!.y - e.evt.clientY,
         };
 
         var pos = curPos.current = {
@@ -57,6 +75,7 @@ export default function DragPoint(props: DragPointProps) {
         });
 
         initPos.current = curPos.current;
+        startEventPos.current = null;
     }, []);
 
 	return (
@@ -67,6 +86,8 @@ export default function DragPoint(props: DragPointProps) {
             radius={4}
             fill="black"
             draggable
+            onMouseOver={onMouseOver}
+            onMouseOut={onMouseOut}
             onMouseDown={onMouseDown}
             onDragMove={onMouseMove}
             onDragEnd={onDragEnd}
