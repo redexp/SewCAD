@@ -1,11 +1,12 @@
 import React, {useCallback, useMemo, useState} from 'react';
 import K from 'react-konva';
+import F from '@flatten-js/core';
 import DragPoint from 'components/DragPoint';
 import {drawRule} from 'components/Rules';
+import Line from 'components/Shapes/Line';
 import Point from 'types/Point';
 import stage from 'lib/Stage';
 import _ from 'lib/y';
-import useRedraw from 'lib/useRedraw';
 
 interface ArrowProps {
     length: number,
@@ -14,7 +15,8 @@ interface ArrowProps {
 
 export default function Arrow(props: ArrowProps) {
     const [pos, setPos] = useState<Point>({x: 100, y: 100});
-    const [s, redraw] = useRedraw();
+    const [s, setRandom] = useState(1);
+    const redraw = useCallback(() => setRandom(Math.random()), []);
     const arrow = useMemo(() => {
         var st = (
             stage({x: 50, y: 50})
@@ -63,11 +65,11 @@ export default function Arrow(props: ArrowProps) {
             value: 100,
         });
 
-        // st.angleRule({
-        //     line1: [start, tl],
-        //     line2: [tl, tr],
-        //     angle: -90,
-        // });
+        st.angleRule({
+            line1: [start, tl],
+            line2: [tl, tr],
+            angle: -90,
+        });
 
         st.distanceRule({
             from: tl,
@@ -87,11 +89,11 @@ export default function Arrow(props: ArrowProps) {
             value: 100,
         });
 
-        // st.angleRule({
-        //     line1: [tr, br],
-        //     line2: [br, bl],
-        //     angle: -90,
-        // });
+        st.angleRule({
+            line1: [tr, br],
+            line2: [br, bl],
+            angle: -90,
+        });
 
         st.distanceRule({
             from: br,
@@ -120,6 +122,13 @@ export default function Arrow(props: ArrowProps) {
     const onDrag = useCallback((p: Point) => {
         setPos(p);
     }, []);
+    const onLine = useCallback((line: F.Segment) => {
+        arrow.addLine(line.start, line.end);
+        redraw();
+    }, []);
+    const getNearPoint = useCallback((p: Point) => {
+        return arrow.getNearPoint(p);
+    }, []);
 
     return <>
         <K.Path
@@ -134,6 +143,15 @@ export default function Arrow(props: ArrowProps) {
         />
 
         {rules}
+
+        <Line
+            x={0}
+            y={0}
+            width={800}
+            height={600}
+            onShape={onLine}
+            getNearPoint={getNearPoint}
+        />
 
         <DragPoint
             x={pos.x}

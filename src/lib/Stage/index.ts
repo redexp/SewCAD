@@ -34,6 +34,14 @@ export class Stage {
         return p;
     }
 
+    addEqualPoint(p: SimplePoint): Point {
+        var equal = this.getEqualPoint(p) as Point;
+
+        if (equal) return equal;
+
+        return this.addPoint(p.x, p.y);
+    }
+
     addDraw(draw: Draw) {
         this.draws.push(draw);
         return this;
@@ -60,11 +68,9 @@ export class Stage {
     line(params: LineParams) {
         var {id, x, y, a, d} = params;
         var prev = this.pointer;
-        var valid = isNum(x) && isNum(y);
         x = x || 0;
         y = y || 0;
         var p = this.addPoint(x, y, id);
-        p.valid = valid;
 
         this.addDraw(new LineDraw(prev, p));
 
@@ -87,6 +93,15 @@ export class Stage {
                 stage: this,
             });
         }
+
+        return this;
+    }
+
+    addLine(from: F.Point, to: F.Point) {
+        var start = this.addEqualPoint(from);
+        var end = this.addEqualPoint(to);
+
+        this.addDraw(new LineDraw(start, end));
 
         return this;
     }
@@ -185,16 +200,7 @@ export class Stage {
                     });
                 });
 
-                var d = Number.MAX_VALUE;
-
-                res.some(point => {
-                    var dist = point.distanceTo(p)[0];
-                    if (dist < d) {
-                        d = dist;
-                        closest = point;
-                        if (d === 0) return true;
-                    }
-                });
+                closest = closestPoint(p, res);
             }
 
             if (closest) {
@@ -220,6 +226,18 @@ export class Stage {
 
         this.fix();
     }
+
+    getEqualPoint(p: SimplePoint|F.Point): Point|null {
+        return equalPoint(toFPoint(p), this.points) as Point;
+    }
+
+    getClosestPoint(p: SimplePoint|F.Point): Point|null {
+        return closestPoint(toFPoint(p), this.points) as Point;
+    }
+
+    getNearPoint(p: SimplePoint|F.Point): Point|null {
+        return nearPoint(toFPoint(p), 10, this.points) as Point;
+    }
 }
 
 interface LineParams {
@@ -235,4 +253,45 @@ interface PointPos {
     point?: Point,
     x: number,
     y: number,
+}
+
+function toFPoint(p: SimplePoint|F.Point): F.Point {
+	return p instanceof F.Point ? p : new F.Point(p.x, p.y);
+}
+
+function equalPoint(p: F.Point, list: F.Point[]): F.Point|null {
+    return list.find(point => point.equalTo(p)) || null;
+}
+
+function closestPoint(p: F.Point, list: F.Point[]): F.Point|null {
+    var closest: F.Point|null = null;
+    var d = Number.MAX_VALUE;
+
+    list.some(point => {
+        var dist = point.distanceTo(p)[0];
+        if (dist < d) {
+            d = dist;
+            closest = point;
+
+            if (d === 0) return true;
+        }
+    });
+
+    return closest;
+}
+
+function nearPoint(p: F.Point, radius: number, list: F.Point[]): F.Point|null {
+    var closest: F.Point|null = null;
+
+    list.some(point => {
+        var dist = point.distanceTo(p)[0];
+        if (dist < radius) {
+            radius = dist;
+            closest = point;
+
+            if (radius === 0) return true;
+        }
+    });
+
+    return closest;
 }

@@ -1,7 +1,7 @@
-import {Point as FPoint} from "@flatten-js/core";
+import F from "@flatten-js/core";
 import ID from './ID';
 
-export default class Point extends FPoint {
+export default class Point extends F.Point {
     id: string|number|undefined;
     valid: boolean = false;
 }

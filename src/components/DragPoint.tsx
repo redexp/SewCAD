@@ -40,6 +40,8 @@ export default function DragPoint(props: DragPointProps) {
     }, []);
 
     const onMouseDown = useCallback((e: KonvaMouseEvent) => {
+        e.cancelBubble = true;
+
         ref.current!.to({
             scaleX: 2,
             scaleY: 2,
