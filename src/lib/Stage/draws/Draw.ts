@@ -1,3 +1,5 @@
-export default interface Draw {
-    draw(): any;
-}
+import Segment from './Segment';
+
+type Draw = Segment;
+
+export default Draw;

@@ -1,4 +1,4 @@
-import React, {useCallback, useMemo, useRef, useState} from 'react';
+import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import K from 'react-konva';
 import Konva from "konva";
 import F from '@flatten-js/core';
@@ -13,11 +13,12 @@ interface LineProps {
     width: number,
     height: number,
     onShape: (line: F.Segment) => void,
+    onRule?: () => void,
     getNearPoint: (p: Point) => F.Point|null,
 }
 
 export default function Line(props: LineProps) {
-    const {x, y, width, height, onShape, getNearPoint} = props;
+    const {x, y, width, height, onShape, onRule, getNearPoint} = props;
     const [start, setStart] = useState<Point|null>(null);
     const [end, setEnd] = useState<Point|null>(null);
     const [nearStart, setNearStart] = useState<Point|null>(null);
@@ -97,6 +98,13 @@ export default function Line(props: LineProps) {
         curPos.current = null;
         nearStartPos.current = null;
         nearEndPos.current = null;
+    }, []);
+
+    useEffect(() => {
+        return () => {
+            document.body.removeEventListener('mousemove', onMouseMove);
+            document.body.removeEventListener('mouseup', onMouseUp);
+        };
     }, []);
 
 	return <>

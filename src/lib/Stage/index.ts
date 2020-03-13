@@ -7,8 +7,8 @@ import Shape from './types/Shape';
 import Rule from './rules/Rule';
 import AngleRule, {AngleLineRuleParams} from './rules/AngleRule';
 import DistanceRule, {DistanceRuleParams} from './rules/DistanceRule';
-import Draw from './draws/Draw';
-import LineDraw from './draws/Line';
+import OnLineRule, {OnLineRuleParams} from './rules/OnLineRule';
+import * as D from './draws';
 
 export default function stage(start: Point|SimplePoint) {
 	return new Stage(start);
@@ -16,7 +16,7 @@ export default function stage(start: Point|SimplePoint) {
 
 export class Stage {
     points: Point[] = [];
-    draws: Draw[] = [];
+    draws: D.Draw[] = [];
     rules: Rule[] = [];
     pointer: Point;
     fixed = true;
@@ -42,7 +42,7 @@ export class Stage {
         return this.addPoint(p.x, p.y);
     }
 
-    addDraw(draw: Draw) {
+    addDraw(draw: D.Draw) {
         this.draws.push(draw);
         return this;
     }
@@ -72,7 +72,7 @@ export class Stage {
         y = y || 0;
         var p = this.addPoint(x, y, id);
 
-        this.addDraw(new LineDraw(prev, p));
+        this.addDraw(new D.Segment(prev, p));
 
         if (isNum(a)) {
             let p1 = this.getPrev(prev);
@@ -97,11 +97,48 @@ export class Stage {
         return this;
     }
 
-    addLine(from: F.Point, to: F.Point) {
-        var start = this.addEqualPoint(from);
-        var end = this.addEqualPoint(to);
+    addLine(from: F.Point, to: F.Point, params: AddLineParams = {}) {
+        var start: Point, end: Point;
 
-        this.addDraw(new LineDraw(start, end));
+        if (params.replaceEqual !== false) {
+            start = this.addEqualPoint(from);
+            end = this.addEqualPoint(to);
+        }
+        else {
+            start = this.addPoint(from.x, from.y);
+            end = this.addPoint(to.x, to.y);
+        }
+
+        if (params.addOnLineRule !== false) {
+            let nearStart = this.getNearSegment(start, 0.01);
+            let nearEnd = this.getNearSegment(end, 0.01);
+
+            if (
+                nearStart &&
+                !nearStart.ps.equalTo(start) &&
+                !nearStart.pe.equalTo(start)
+            ) {
+                this.onLineRule({
+                    stage: this,
+                    point: start,
+                    line: [nearStart.ps, nearStart.pe],
+                });
+            }
+
+            if (
+                nearEnd &&
+                !nearEnd.ps.equalTo(end) &&
+                !nearEnd.pe.equalTo(end)
+            ) {
+                this.onLineRule({
+                    stage: this,
+                    point: end,
+                    line: [nearEnd.ps, nearEnd.pe],
+                });
+            }
+        }
+
+        this.addDraw(new D.Segment(start, end));
 
         return this;
     }
@@ -112,14 +149,14 @@ export class Stage {
         return this;
     }
 
-    toLines(): LineDraw[] {
+    toLines(): D.Segment[] {
         if (!this.fixed) {
             this.fix();
         }
 
-        var lines: LineDraw[] = [];
+        var lines: D.Segment[] = [];
         this.draws.forEach((draw) => {
-            if (draw instanceof LineDraw) {
+            if (draw instanceof D.Segment) {
                 lines.push(draw);
             }
         });
@@ -143,6 +180,13 @@ export class Stage {
         params.stage = this;
 
         this.rules.push(new DistanceRule(params));
+        this.fixed = false;
+    }
+
+    onLineRule(params: OnLineRuleParams) {
+        params.stage = this;
+
+        this.rules.push(new OnLineRule(params));
         this.fixed = false;
     }
 
@@ -235,8 +279,38 @@ export class Stage {
         return closestPoint(toFPoint(p), this.points) as Point;
     }
 
-    getNearPoint(p: SimplePoint|F.Point): Point|null {
-        return nearPoint(toFPoint(p), 10, this.points) as Point;
+    getNearPoint(p: SimplePoint|F.Point): F.Point|null {
+        var point = toFPoint(p);
+        var near = nearPoint(point, 10, this.points);
+
+        if (!near) {
+            let seg = this.getNearSegment(point);
+
+            if (seg) {
+                near = seg.distanceTo(point)[1].start;
+            }
+        }
+
+        return near;
+    }
+
+    getNearSegment(p: SimplePoint|F.Point, radius: number = 10): D.Segment|null {
+        var point = toFPoint(p);
+        var near: D.Segment|null = null;
+
+        this.draws.some(draw => {
+            if (!(draw instanceof D.Segment)) return;
+
+            var [dist] = draw.distanceTo(point);
+
+            if (dist > radius) return;
+
+            near = draw;
+
+            if (dist < 0.01) return true;
+        });
+
+        return near;
     }
 }
 
@@ -253,6 +327,11 @@ interface PointPos {
     point?: Point,
     x: number,
     y: number,
+}
+
+interface AddLineParams {
+    replaceEqual?: boolean,
+    addOnLineRule?: boolean,
 }
 
 function toFPoint(p: SimplePoint|F.Point): F.Point {
